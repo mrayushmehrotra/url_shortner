@@ -27,4 +27,8 @@ userRouter.post("/verify-token", async (req, res) => {
   }
 });
 
+userRouter.get("/", (req, res) => {
+  res.json("working");
+});
+
 export { userRouter };

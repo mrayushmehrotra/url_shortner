@@ -40,3 +40,6 @@ userRouter.post("/verify-token", (req, res) => __awaiter(void 0, void 0, void 0,
         });
     }
 }));
+userRouter.get("/", (req, res) => {
+    res.json("working");
+});

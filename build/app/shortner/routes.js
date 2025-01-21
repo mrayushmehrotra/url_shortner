@@ -24,7 +24,7 @@ shortnerRouter.post("/shortner", (req, res) => __awaiter(void 0, void 0, void 0,
     if (!id) {
         return res.status(400).json({ message: "User is not authenticated" });
     }
-    const { longUrl, expiry } = req.body; // Get long URL and expiry from the request body
+    const { longUrl } = req.body; // Get long URL and expiry from the request body
     if (!longUrl) {
         return res.status(400).json({ message: "URL is required" });
     }

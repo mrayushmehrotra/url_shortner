@@ -1,3 +1,6 @@
 node_modules
 # Keep environment variables out of version control
 .env
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNtNjZkb2lmZjAwMDBjbXNwcWs5N3BmdTYiLCJlbWFpbCI6ImVsbGlvdGFsZGVyc29uaXN0aGViZXN0QGdtYWlsLmNvbSIsImlhdCI6MTczNzQ1ODA4MX0._d48wEvgviuQ9o7vYm5y1oegpLoiAXAmqUPyaYmWGTc"
+}

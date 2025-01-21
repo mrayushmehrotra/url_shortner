@@ -2,7 +2,11 @@ import { Request, Response, NextFunction } from "express";
 import JWTService from "../services/jwt"; // Import JWTService
 
 // Middleware to validate JWT and extract userId
-const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
+const authenticateTokenMiddleware = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
   const token = req.headers.authorization?.split(" ")[1]; // Get token from Authorization header
 
   if (!token) {
@@ -29,4 +33,4 @@ const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
   }
 };
 
-export default authenticateToken;
+export default authenticateTokenMiddleware;
