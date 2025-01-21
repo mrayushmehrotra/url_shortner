@@ -1,0 +1,69 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String  @id @default(cuid()) @map("_id")
+  firstName String
+  lastName  String?
+  email     String  @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  links  Link[] // One-to-many relationship with Link
+  topics Topic[] // One-to-many relationship with Topic
+}
+
+model Link {
+  id           String      @id @default(cuid()) @map("_id")
+  longUrl      String
+  shortUrl     String      @unique
+  expiry       DateTime // Set an expiration date for the link
+  topicId      String? // Optional topic grouping
+  topic        Topic?      @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clickCount   Int         @default(0) // Total clicks tracked for this link
+  uniqueClicks Int         @default(0) // Unique users tracked for this link
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  analytics    Analytics[] // One-to-many relationship with Analytics
+
+  @@index([expiry]) // Optionally, you can add an index on expiry to make expiry-based queries faster
+}
+
+model Topic {
+  id        String   @id @default(cuid()) @map("_id")
+  name      String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  links     Link[] // One-to-many relationship with Link
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Analytics {
+  id          String   @id @default(cuid()) @map("_id")
+  linkId      String
+  link        Link     @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  timestamp   DateTime @default(now())
+  userAgent   String // User agent string for OS and device type analysis
+  ipAddress   String // IP address of the user clicking the link
+  osName      String // Operating system name (e.g., Windows, macOS, Linux)
+  deviceType  String // Device type (e.g., mobile, desktop)
+  geolocation String? // Optional geolocation data (could be based on IP)
+
+  @@index([linkId]) // You can index on linkId for quick lookup of analytics related to a link
+}
