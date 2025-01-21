@@ -22,8 +22,7 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  links  Link[] // One-to-many relationship with Link
-  topics Topic[] // One-to-many relationship with Topic
+  links Link[] // One-to-many relationship with Link
 }
 
 model Link {
@@ -32,7 +31,8 @@ model Link {
   shortUrl     String      @unique
   expiry       DateTime // Set an expiration date for the link
   topicId      String? // Optional topic grouping
-  topic        Topic?      @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  topic        String?
+  customAlias  String?
   userId       String
   user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   clickCount   Int         @default(0) // Total clicks tracked for this link
@@ -42,16 +42,6 @@ model Link {
   analytics    Analytics[] // One-to-many relationship with Analytics
 
   @@index([expiry]) // Optionally, you can add an index on expiry to make expiry-based queries faster
-}
-
-model Topic {
-  id        String   @id @default(cuid()) @map("_id")
-  name      String   @unique
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  links     Link[] // One-to-many relationship with Link
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 model Analytics {

@@ -5,7 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const jwt_1 = __importDefault(require("../services/jwt")); // Import JWTService
 // Middleware to validate JWT and extract userId
-const authenticateTokenMiddleware = (req, res, next) => {
+const middleware = (req, res, next) => {
     var _a;
     const token = (_a = req.headers.authorization) === null || _a === void 0 ? void 0 : _a.split(" ")[1]; // Get token from Authorization header
     if (!token) {
@@ -28,4 +28,4 @@ const authenticateTokenMiddleware = (req, res, next) => {
         return res.status(403).json({ message: "Invalid or expired token" });
     }
 };
-exports.default = authenticateTokenMiddleware;
+exports.default = middleware;
