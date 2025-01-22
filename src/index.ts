@@ -1,12 +1,8 @@
 import { initServer } from "./app";
 const Redis = require("ioredis");
 const redisHost = process.env.REDIS_HOST || "localhost";
-const redisPort = process.env.REDIS_PORT || 6379;
 
-const redisClient = new Redis({
-  host: redisHost,
-  port: redisPort,
-});
+const redisClient = new Redis(redisHost);
 
 redisClient.on("connect", () => console.log("Connected to Redis"));
 redisClient.on("error", (err: any) => console.error("Redis error:", err));
