@@ -1,5 +1,5 @@
-import { analyticsRouter } from "./resolver";
+import { analyticRoute } from "./routes";
 
 export const Analytics = {
-  analyticsRouter,
+  analyticRoute,
 };

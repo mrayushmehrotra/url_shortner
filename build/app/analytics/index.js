@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Analytics = void 0;
-const resolver_1 = require("./resolver");
+const routes_1 = require("./routes");
 exports.Analytics = {
-    analyticsRouter: resolver_1.analyticsRouter,
+    analyticRoute: routes_1.analyticRoute,
 };

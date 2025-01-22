@@ -17,7 +17,7 @@ export async function initServer() {
   // TODO: Fix this
   // @ts-ignore
   app.use("/api", ShortURL.shortnerRouter);
-  app.use("/api", Analytics.analyticsRouter);
+  app.use("/api", Analytics.analyticRoute);
 
   app.get("/", (req, res) => {
     res.status(200).json({

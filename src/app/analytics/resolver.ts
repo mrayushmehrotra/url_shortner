@@ -1,7 +1,4 @@
-import express from "express";
 import { prismaClient } from "../../clients/db";
-import middleware from "../middleware";
-const analyticsRouter = express.Router();
 import Redis from "ioredis";
 const redis = new Redis();
 
@@ -22,16 +19,13 @@ const getCachedAnalyticsData = async (key: string) => {
   }
 };
 
-// @ts-ignore
-analyticsRouter.get("/analytics/:alias", middleware, async (req, res) => {
-  // here alias = shortUrl
-  const alias = req.params.alias;
-  if (req.userId) {
-    return res.status(500).json({ message: "User is not authenticated" });
+const getAnayticsById = async function (alias: string, userId: string) {
+  if (!userId) {
+    throw new Error("User is not authenticated");
   }
 
   if (!alias) {
-    return res.status(400).json({ message: "ShortLink is required" });
+    throw new Error("Short link is required");
   }
 
   try {
@@ -39,7 +33,7 @@ analyticsRouter.get("/analytics/:alias", middleware, async (req, res) => {
     const cachedData = await getCachedAnalyticsData(cacheKey);
 
     if (cachedData) {
-      return res.status(200).json(cachedData);
+      return cachedData;
     }
 
     const link = await prismaClient.link.findUnique({
@@ -48,14 +42,12 @@ analyticsRouter.get("/analytics/:alias", middleware, async (req, res) => {
     });
 
     if (!link) {
-      return res.status(404).json({ message: "Link not found" });
+      throw new Error("Link not found");
     }
 
-    // Calculate total clicks and unique clicks
     const totalClicks = link.clickCount;
     const uniqueClicks = link.uniqueClicks;
 
-    // Clicks grouped by date (last 7 days)
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
@@ -70,11 +62,10 @@ analyticsRouter.get("/analytics/:alias", middleware, async (req, res) => {
     });
 
     const formattedClicksByDate = clicksByDate.map((click) => ({
-      date: click.timestamp.toISOString().split("T")[0], // Format date as YYYY-MM-DD
+      date: click.timestamp.toISOString().split("T")[0],
       clickCount: click._count,
     }));
 
-    // Clicks grouped by OS type
     const osType = await prismaClient.analytics.groupBy({
       by: ["osName"],
       where: { linkId: link.id },
@@ -88,7 +79,6 @@ analyticsRouter.get("/analytics/:alias", middleware, async (req, res) => {
       uniqueClicks: os._count.osName,
     }));
 
-    // Clicks grouped by device type
     const deviceType = await prismaClient.analytics.groupBy({
       by: ["deviceType"],
       where: { linkId: link.id },
@@ -109,46 +99,46 @@ analyticsRouter.get("/analytics/:alias", middleware, async (req, res) => {
       osType: formattedOsType,
       deviceType: formattedDeviceType,
     };
+
     await cacheAnalyticsData(cacheKey, analyticsData);
-    // Return analytics data
-    return res.status(200).json(analyticsData);
+    return analyticsData;
   } catch (error) {
     console.error("Error fetching analytics:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
+    throw new Error("Failed to fetch analytics");
   }
-});
+};
 
 //@ts-ignore
-analyticsRouter.get("/analytics/topic/:topic", async (req, res) => {
-  const topic = req.params.topic;
 
-  if (!topic) {
-    return res.status(400).json({ message: "Topic is required" });
-  }
-
+const getTopicAnalytics = async function (topic: string) {
   const cacheKey = `analytics:topic:${topic}`;
 
-  const cachedData = await getCachedAnalyticsData(cacheKey);
-  if (cachedData) {
-    return res.status(200).json(cachedData);
-  }
-
   try {
+    // Check for cached data
+    const cachedData = await getCachedAnalyticsData(cacheKey);
+    if (cachedData) {
+      return cachedData;
+    }
+
     // Fetch all links under the specified topic
     const links = await prismaClient.link.findMany({
       where: { topic },
       include: { analytics: true },
     });
 
-    if (links.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "No links found under this topic" });
+    if (!links || links.length === 0) {
+      throw new Error(`No links found under the topic "${topic}"`);
     }
 
     // Calculate total clicks and unique users for the topic
-    const totalClicks = links.reduce((sum, link) => sum + link.clickCount, 0);
-    const uniqueUsers = links.reduce((sum, link) => sum + link.uniqueClicks, 0);
+    const totalClicks = links.reduce(
+      (sum, link) => sum + (link.clickCount || 0),
+      0,
+    );
+    const uniqueUsers = links.reduce(
+      (sum, link) => sum + (link.uniqueClicks || 0),
+      0,
+    );
 
     // Clicks grouped by date (last 7 days)
     const sevenDaysAgo = new Date();
@@ -172,48 +162,57 @@ analyticsRouter.get("/analytics/topic/:topic", async (req, res) => {
     // URLs and their respective performance
     const urls = links.map((link) => ({
       shortUrl: link.shortUrl,
-      totalClicks: link.clickCount,
-      uniqueUsers: link.uniqueClicks,
+      totalClicks: link.clickCount || 0,
+      uniqueUsers: link.uniqueClicks || 0,
     }));
 
-    // Return analytics data
+    // Construct analytics data
     const topicData = {
       totalClicks,
       uniqueUsers,
-      clicksByDate: formattedClicksByDate,
+      clicksByDate:
+        formattedClicksByDate.length > 0 ? formattedClicksByDate : [],
       urls,
     };
+
+    // Cache analytics data
     await cacheAnalyticsData(cacheKey, topicData);
-    return res.status(200).json(topicData);
-  } catch (error) {
-    console.error("Error fetching topic analytics:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
-  }
-});
-//@ts-ignore
-analyticsRouter.get("/analytics/overall", middleware, async (req, res) => {
-  const userId = req.userId;
 
-  if (!userId) {
-    return res.status(400).json({ message: "User is not authenticated" });
+    return topicData;
+  } catch (error: any) {
+    console.error("Error fetching topic analytics:", error.message);
+    throw new Error(error.message || "Failed to fetch topic analytics.");
   }
+};
 
+const getOverallAnalytics = async function (userId: string) {
   const cacheKey = `redis:analytics:overall:${userId}`;
 
-  const cachedData = await getCachedAnalyticsData(cacheKey);
-  if (cachedData) {
-    return res.status(200).json(cachedData);
-  }
-
   try {
+    const cachedData = await getCachedAnalyticsData(cacheKey);
+    if (cachedData) {
+      return cachedData;
+    }
+
     // Fetch all links created by the user
     const links = await prismaClient.link.findMany({
       where: { userId },
       include: { analytics: true },
     });
+    console.log("Link MIla: ", links);
 
-    if (links.length === 0) {
-      return res.status(404).json({ message: "No links found for this user" });
+    if (!links || links.length === 0) {
+      throw new Error("No links found for this user");
+    }
+
+    const linkIds = links.map((link) => link.id);
+
+    // Ensure analytics exist for the fetched links
+    const hasAnalytics = links.some(
+      (link) => link.analytics && link.analytics.length > 0,
+    );
+    if (!hasAnalytics) {
+      throw new Error("No analytics data found for the user's links");
     }
 
     // Calculate total URLs, total clicks, and unique users
@@ -228,7 +227,7 @@ analyticsRouter.get("/analytics/overall", middleware, async (req, res) => {
     const clicksByDate = await prismaClient.analytics.groupBy({
       by: ["timestamp"],
       where: {
-        linkId: { in: links.map((link) => link.id) },
+        linkId: { in: linkIds },
         timestamp: { gte: sevenDaysAgo },
       },
       _count: true,
@@ -243,12 +242,8 @@ analyticsRouter.get("/analytics/overall", middleware, async (req, res) => {
     // Clicks grouped by OS type
     const osType = await prismaClient.analytics.groupBy({
       by: ["osName"],
-      where: {
-        linkId: { in: links.map((link) => link.id) },
-      },
-      _count: {
-        osName: true,
-      },
+      where: { linkId: { in: linkIds } },
+      _count: { osName: true },
     });
 
     const formattedOsType = osType.map((os) => ({
@@ -259,19 +254,15 @@ analyticsRouter.get("/analytics/overall", middleware, async (req, res) => {
     // Clicks grouped by device type
     const deviceType = await prismaClient.analytics.groupBy({
       by: ["deviceType"],
-      where: {
-        linkId: { in: links.map((link) => link.id) },
-      },
-      _count: {
-        deviceType: true,
-      },
+      where: { linkId: { in: linkIds } },
+      _count: { deviceType: true },
     });
 
     const formattedDeviceType = deviceType.map((device) => ({
       deviceName: device.deviceType,
       uniqueClicks: device._count.deviceType,
     }));
-
+    console.log("i'm good until now");
     const overallAnalyticsData = {
       totalUrls,
       totalClicks,
@@ -283,12 +274,11 @@ analyticsRouter.get("/analytics/overall", middleware, async (req, res) => {
 
     await cacheAnalyticsData(cacheKey, overallAnalyticsData);
 
-    // Return analytics data
-    return res.status(200).json(overallAnalyticsData);
-  } catch (error) {
-    console.error("Error fetching overall analytics:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
+    return overallAnalyticsData;
+  } catch (error: any) {
+    console.error("Error in getOverallAnalytics:", error.message);
+    throw new Error(error.message || "Failed to fetch overall analytics.");
   }
-});
+};
 
-export { analyticsRouter };
+export { getAnayticsById, getTopicAnalytics, getOverallAnalytics };

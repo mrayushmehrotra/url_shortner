@@ -10,6 +10,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const app_1 = require("./app");
+const Redis = require("ioredis");
+const redisHost = process.env.REDIS_HOST || "localhost";
+const redisPort = process.env.REDIS_PORT || 6379;
+const redisClient = new Redis({
+    host: redisHost,
+    port: redisPort,
+});
+redisClient.on("connect", () => console.log("Connected to Redis"));
+redisClient.on("error", (err) => console.error("Redis error:", err));
 function init() {
     return __awaiter(this, void 0, void 0, function* () {
         const app = yield (0, app_1.initServer)();

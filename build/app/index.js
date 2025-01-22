@@ -28,7 +28,7 @@ function initServer() {
         // TODO: Fix this
         // @ts-ignore
         app.use("/api", shortner_1.ShortURL.shortnerRouter);
-        app.use("/api", analytics_1.Analytics.analyticsRouter);
+        app.use("/api", analytics_1.Analytics.analyticRoute);
         app.get("/", (req, res) => {
             res.status(200).json({
                 success: true,
