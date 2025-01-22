@@ -31,7 +31,7 @@ npm run dev
 
 ## API Routes
 
-### 1. `GET /api/analytics/:alias`
+### 1. `GET /api/analytic/:alias`
 
 - **Description**: Fetches analytics data for a specific shortened URL alias.
 - **Authentication**: Requires user authentication.
@@ -41,7 +41,7 @@ npm run dev
 - **Sample Request**:
 
   ```http
-  GET /api/analytics/:alias
+  GET /api/analytic/:alias
   ```
 
 - **Response**:
@@ -64,7 +64,7 @@ npm run dev
   }
   ```
 
-### 2. `GET /api/analytics/topic/:topic`
+### 2. `GET /api/analytic/topic/:topic`
 
 - **Description**: Fetches analytics for all URLs under a specific topic.
 - **Authentication**: Not required.
@@ -73,7 +73,7 @@ npm run dev
 - **Sample Request**:
 
   ```http
-  GET /api/analytics/topic/:topic
+  GET /api/analytic/topic/:topic
   ```
 
 - **Response**:
@@ -158,11 +158,8 @@ To improve performance, this API uses Redis for caching analytics data. Redis is
 - **Redis**: In-memory caching solution for storing frequently accessed data.
 - **ioredis**: Redis client for Node.js.
 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This `README.md` file provides clear documentation on the API routes, the Redis caching mechanism, and the expected responses. It also details the error handling and technologies used, giving anyone who reads it a solid understanding of how to use and extend this project.
 
 ```
 
-This `README.md` file provides clear documentation on the API routes, the Redis caching mechanism, and the expected responses. It also details the error handling and technologies used, giving anyone who reads it a solid understanding of how to use and extend this project.
 ```
